@@ -3,7 +3,8 @@ import User from '../models/User.js';
 import Course from '../models/Course.js';
 import Enrollment from '../models/Enrollment.js';
 import { protect,allow } from '../middleware/auth.js';
-const router=Router();router.use(protect,allow('admin'));
+const router=Router();
+router.use(protect,allow('admin'));
 router.get('/stats',async(req,res,next)=>{try{
  const [students,instructors,courses,enrollments,pending]=await Promise.all([
   User.countDocuments({role:'student'}),User.countDocuments({role:'instructor'}),Course.countDocuments(),Enrollment.countDocuments({status:'approved'}),Enrollment.countDocuments({status:'pending'})

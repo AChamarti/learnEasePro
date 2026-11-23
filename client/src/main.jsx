@@ -1,5 +1,19 @@
-import React from 'react';import{createRoot}from'react-dom/client';import{BrowserRouter,Routes,Route}from'react-router-dom';
-import{AuthProvider}from'./context/AuthContext';import Layout from'./components/Layout';import ProtectedRoute from'./components/ProtectedRoute';
-import Home from'./pages/Home';import{Login,Register,ForgotPassword,ResetPassword}from'./pages/Auth';import Courses,{CourseDetail}from'./pages/Courses';import Dashboard from'./pages/Dashboard';import ManageCourse from'./pages/ManageCourse';import Learn from'./pages/Learn';import Admin from'./pages/Admin';import Discussions from'./pages/Discussions';import'./styles.css';
-function App(){return <AuthProvider><BrowserRouter><Routes><Route element={<Layout/>}><Route index element={<Home/>}/><Route path="courses" element={<Courses/>}/><Route path="courses/:id" element={<CourseDetail/>}/><Route path="login" element={<Login/>}/><Route path="register" element={<Register/>}/><Route path="forgot-password" element={<ForgotPassword/>}/><Route path="reset-password/:token" element={<ResetPassword/>}/><Route element={<ProtectedRoute/>}><Route path="dashboard" element={<Dashboard/>}/><Route path="learn/:id" element={<Learn/>}/><Route path="discussions/:id" element={<Discussions/>}/><Route element={<ProtectedRoute roles={['admin','instructor']}/>}><Route path="manage-course" element={<ManageCourse/>}/><Route path="manage-course/:id" element={<ManageCourse/>}/></Route><Route element={<ProtectedRoute roles={['admin']}/>}><Route path="admin" element={<Admin/>}/></Route></Route><Route path="*" element={<div className="page-wrap"><h1>Page not found</h1></div>}/></Route></Routes></BrowserRouter></AuthProvider>}
+import React from 'react';
+import{createRoot}from'react-dom/client';
+import{BrowserRouter,Routes,Route}from'react-router-dom';
+import{AuthProvider}from'./context/AuthContext';
+import Layout from'./components/Layout';
+import ProtectedRoute from'./components/ProtectedRoute';
+import Home from'./pages/Home';
+import{Login,Register,ForgotPassword,ResetPassword}from'./pages/Auth';
+import Courses,{CourseDetail}from'./pages/Courses';
+import Dashboard from'./pages/Dashboard';
+import ManageCourse from'./pages/ManageCourse';
+import Learn from'./pages/Learn';
+import Admin from'./pages/Admin';
+import Discussions from'./pages/Discussions';
+import ManageQuizzes from'./pages/ManageQuizzes';
+import PaymentSuccess from'./pages/PaymentSuccess';
+import'./styles.css';
+function App(){return <AuthProvider><BrowserRouter><Routes><Route element={<Layout/>}><Route index element={<Home/>}/><Route path="courses" element={<Courses/>}/><Route path="courses/:id" element={<CourseDetail/>}/><Route path="login" element={<Login/>}/><Route path="register" element={<Register/>}/><Route path="forgot-password" element={<ForgotPassword/>}/><Route path="reset-password/:token" element={<ResetPassword/>}/><Route element={<ProtectedRoute/>}><Route path="dashboard" element={<Dashboard/>}/><Route path="learn/:id" element={<Learn/>}/><Route path="discussions/:id" element={<Discussions/>}/><Route path="payment/success" element={<PaymentSuccess/>}/><Route element={<ProtectedRoute roles={['admin','instructor']}/>}><Route path="manage-course/:id/quizzes" element={<ManageQuizzes/>}/></Route><Route element={<ProtectedRoute roles={['admin','instructor']}/>}><Route path="manage-course" element={<ManageCourse/>}/><Route path="manage-course/:id" element={<ManageCourse/>}/></Route><Route element={<ProtectedRoute roles={['admin']}/>}><Route path="admin" element={<Admin/>}/></Route></Route><Route path="*" element={<div className="page-wrap"><h1>Page not found</h1></div>}/></Route></Routes></BrowserRouter></AuthProvider>}
 createRoot(document.getElementById('root')).render(<React.StrictMode><App/></React.StrictMode>);

@@ -1,107 +1,170 @@
-# LearnEase Pro — MERN Stack Capstone
+# LearnEase Pro — MERN E-Learning Management System
 
-A full-stack e-learning management system built with MongoDB, Express, React and Node.js. The project includes administrator, instructor and student workflows.
+A MERN-stack learning platform with role-based access for administrators, instructors and students.
 
-## Features included
+## Features
 
-- JWT registration/login, role-based authorization, bcrypt password hashing, forgot/reset password flow.
-- Course catalogue, categories, pricing, thumbnails (URL), instructor course creation/editing and lesson URLs.
-- Student course access requests; admin approval/rejection; student dashboard and lesson completion tracking.
-- Lesson video playback (hosted video URL) and downloadable resource links.
-- Admin dashboard counts, user list/role management and enrolment report table.
-- Student reviews/ratings endpoint (approved students only).
-- Course group discussion endpoints and discussion page.
-- Responsive React/Vite interface, React Router and Axios API client.
+- JWT authentication, password hashing and password reset flow.
+- Course catalogue, categories, pricing, instructor course management and admin moderation.
+- Student course access requests and administrator approval.
+- Cloudinary uploads for course thumbnails and learning resources. Lesson videos are added by pasting a shareable YouTube, Vimeo or direct MP4/WebM/MOV URL; instructors do not need to download or upload video files.
+- Lesson playback, downloadable materials and completion tracking.
+- Multiple-choice quizzes, server-side grading, pass marks and attempt history.
+- Real-time course group chat with Socket.IO; chat access is checked on the server.
+- Stripe Checkout for paid courses. Enrolment is activated only after a verified Stripe webhook reports a paid checkout.
+- Course reviews and ratings for approved students.
+- Admin statistics, user/role management and enrolment reports.
 
 ## Requirements
 
-- Node.js 18+
-- MongoDB Atlas database
+- Node.js 18.18+ (Node 20 LTS recommended)
+- MongoDB Atlas or local MongoDB
+- Cloudinary account for uploads
+- Stripe account for paid-course checkout (test mode is sufficient for development)
 
-## Run locally
-
-### 1. Backend
+## 1. Configure the backend
 
 ```bash
 cd server
-cp .env.example .env
-# Edit MONGO_URI and JWT_SECRET in .env
 npm install
+cp .env.example .env
+```
+
+Edit `server/.env`:
+
+```env
+PORT=5000
+MONGO_URI=mongodb+srv://USER:PASSWORD@YOUR_CLUSTER.mongodb.net/test?retryWrites=true&w=majority
+JWT_SECRET=replace_with_a_long_random_secret
+JWT_EXPIRES_IN=7d
+CLIENT_URL=http://localhost:5173
+
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+PAYMENT_CURRENCY=gbp
+```
+
+Generate a JWT secret with:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+```
+
+Start the API and Socket.IO server:
+
+```bash
 npm run dev
 ```
 
-API runs at `http://localhost:5000`; health check: `http://localhost:5000/api/health`.
+Health check: `http://localhost:5000/api/health`
 
-### 2. Frontend (new terminal)
+## 2. Configure the frontend
+
+In another terminal:
 
 ```bash
 cd client
 npm install
+```
+
+Optional `client/.env`:
+
+```env
+VITE_API_URL=http://localhost:5000/api
+VITE_SOCKET_URL=http://localhost:5000
+```
+
+Start Vite:
+
+```bash
 npm run dev
 ```
 
 Open `http://localhost:5173`.
 
-If the API is hosted elsewhere, create `client/.env` with:
+## 3. Create the first administrator
 
-```env
-VITE_API_URL=http://localhost:5000/api
+1. Register a normal account in the app.
+2. In MongoDB Atlas Data Explorer, open the database selected in `MONGO_URI` and its `users` collection.
+3. Edit that user's `role` from `student` to `admin`.
+4. Sign out and sign in again so the app receives a fresh JWT/user role.
+
+Never expose admin registration publicly.
+
+## 4. Cloudinary uploads
+
+Create a Cloudinary account at https://cloudinary.com/. Copy the cloud name, API key and API secret from the Cloudinary dashboard into `server/.env`. Uploads are sent through the authenticated API endpoint `/api/uploads`; instructor/admin access is required. Current file limit is 500 MB. Supported uploads include images, PDF, ZIP, common Office documents and text files. Video file upload remains available in the legacy API but is no longer used by the course editor. Adjust the allow-list and limits in `server/src/routes/uploads.js` if your deployment needs other types.
+
+## 4a. Adding lesson videos by URL (no video download required)
+
+In Instructor Studio, paste a share link into the **Video URL** field when adding a lesson. Supported sources:
+
+- YouTube standard links (`youtube.com/watch?v=...`), short links (`youtu.be/...`), Shorts, live and embed links. The learner page embeds YouTube using its privacy-enhanced player domain.
+- Vimeo video links. The learner page embeds the Vimeo player.
+- Direct HTTPS video file URLs ending in `.mp4`, `.webm` or `.mov`. These play in the browser's native video player.
+
+The video must allow embedding when using YouTube or Vimeo. Private videos, age/region-restricted videos, or videos whose owner disables embedding may not play. For direct video URLs, the host must permit browser playback (including CORS/range requests where required). Only paste links to videos you own or are authorised to use.
+
+## 5. Stripe test payments and webhook
+
+1. Create a Stripe account and use test mode.
+2. Put the test secret key (`sk_test_...`) in `STRIPE_SECRET_KEY`.
+3. Install the Stripe CLI: https://stripe.com/docs/stripe-cli
+4. Authenticate and forward webhooks to the local backend:
+
+```bash
+stripe login
+stripe listen --forward-to localhost:5000/api/payments/webhook
 ```
 
-## Create the first administrator
+5. Copy the printed `whsec_...` signing secret into `STRIPE_WEBHOOK_SECRET`, restart the backend, and test with a Stripe test card such as `4242 4242 4242 4242` (any future expiry and any CVC).
 
-Public registration intentionally permits only `student` and `instructor`. Register a normal account, then promote it directly in MongoDB once:
+The payment webhook is deliberately required: do not manually mark a paid course as approved based only on the browser redirect. In production, configure a public HTTPS webhook endpoint in Stripe Dashboard and keep the signing secret private.
 
-```javascript
-use learneasepro
-db.users.updateOne({ email: "admin@example.com" }, { $set: { role: "admin" } })
+## 6. Workflow
+
+- Instructor creates a course, uploads a thumbnail and optional learning resources, pastes a video URL for each lesson, adds lessons, and publishes it.
+- Instructor opens **Manage quizzes** to create assessments and correct answers.
+- Student requests access to a free course; an admin approves or rejects the request.
+- For a paid course, the student completes Stripe Checkout; the verified webhook activates enrolment.
+- Approved students can watch videos, download resources, mark lessons complete, take quizzes, review the course and join its live group chat.
+- Admin manages users, enrolment requests and platform reports.
+
+## API additions
+
+- `POST /api/uploads` — authenticated multipart file upload.
+- `POST /api/quizzes/course/:courseId` — create quiz (course owner/admin).
+- `GET /api/quizzes/course/:courseId` — list course quizzes for an authorised learner or manager.
+- `POST /api/quizzes/:id/attempts` — submit and grade a student attempt.
+- `POST /api/payments/checkout/:courseId` — create Stripe Checkout session.
+- `POST /api/payments/webhook` — verify Stripe events and activate paid enrolments.
+- Socket.IO events: `course:join`, `course:message`; server validates course access and persists messages.
+
+## Security notes
+
+- Never commit `.env` files or share database, JWT, Cloudinary or Stripe secrets.
+- Use HTTPS, a restrictive CORS origin, strong secrets, backups and a production file-size policy when deploying.
+- Configure Stripe webhook signing in production. Do not treat the success redirect as proof of payment.
+- Cloudinary URLs are delivered to enrolled learners via the course API; use private authenticated delivery if the course content requires DRM or strict access revocation.
+- For production, add virus scanning and stricter MIME/content validation for user uploads.
+
+## Build and checks
+
+```bash
+cd client && npm run build
+cd ../server && npm start
 ```
 
-Log out and back in so the new role is reflected in the JWT and user session. Never expose an unrestricted public admin-registration option.
+External services (MongoDB, Cloudinary and Stripe) require your own credentials and cannot be activated by the source archive itself.
 
-## Main API routes
+## Session security update (automatic logout)
 
-| Method | Route | Access | Purpose |
-|---|---|---|---|
-| POST | `/api/auth/register` | Public | Register student/instructor |
-| POST | `/api/auth/login` | Public | Login |
-| GET | `/api/auth/me` | Authenticated | Current user |
-| POST | `/api/auth/forgot-password` | Public | Request reset link |
-| POST | `/api/auth/reset-password/:token` | Public | Set new password |
-| GET | `/api/courses` | Public | Published course catalogue |
-| GET | `/api/courses/:id` | Public | Course details and reviews |
-| POST | `/api/courses` | Instructor/admin | Create course |
-| PATCH/DELETE | `/api/courses/:id` | Owner/admin | Update/delete course |
-| POST | `/api/courses/:id/enrol` | Student | Request course access |
-| POST | `/api/courses/:id/reviews` | Approved student | Create/update rating |
-| GET | `/api/learning/mine` | Student | Own enrolments and progress |
-| PATCH | `/api/learning/:enrollmentId/lessons/:lessonId/complete` | Student | Mark lesson complete |
-| GET | `/api/admin/stats` | Admin | Dashboard counts |
-| GET | `/api/admin/users` | Admin | User list |
-| PATCH | `/api/admin/users/:id/role` | Admin | Change user role |
-| GET | `/api/admin/enrollments` | Admin | Enrolment report |
-| PATCH | `/api/admin/enrollments/:id` | Admin | Approve/reject request |
-| GET/POST | `/api/discussions/:courseId` | Course member/instructor/admin | Read/post group messages |
+LearnEase Pro now validates the saved login token against `GET /api/auth/me` whenever the frontend starts. If the token is invalid, expired, or the account no longer exists, the frontend clears the saved login and sends the user to the login page. Any later API response with HTTP 401 also clears the session.
 
-All protected routes use `Authorization: Bearer <JWT>`.
+The backend also creates a fresh server-session identifier every time it starts. JWTs issued by a previous backend process are rejected after a restart, so users must sign in again after you stop and rerun the backend. This is intentional for local development and demonstrations: restarting the API signs out all users. It does not delete user accounts, courses, enrolments, or other MongoDB data.
 
-## Suggested project structure
-
-```text
-learnease-pro/
-  client/                 # React + Vite frontend
-    src/api/              # Axios client
-    src/components/       # Layout and route guards
-    src/context/          # Authentication context
-    src/pages/            # Home, auth, courses, learning, admin
-  server/                 # Express API
-    src/config/            # MongoDB connection
-    src/middleware/        # JWT and role checks
-    src/models/            # Mongoose schemas
-    src/routes/            # REST API routes
-    src/utils/             # Token helpers
-```
-
-## Capstone scope alignment
-
-The supplied PDF calls the project **LearnEase Pro** and specifies an eLearning platform for learners, faculties/instructors and administrators. It also asks for course access requests, course updates, feedback/ratings, group chat, materials such as documents/videos/presentations, Git version control and learner progress tracking. These are reflected in this implementation where practical; see the implementation notes for features that need a production provider or a follow-on sprint.
+After installing this update, restart both the backend and frontend. Existing tokens from older versions will be rejected once; sign in again. Keep `JWT_SECRET` private and unchanged between ordinary runs. The server-session identifier is generated automatically and must not be added to `.env`.

@@ -4,6 +4,7 @@ import Enrollment from '../models/Enrollment.js';
 import Review from '../models/Review.js';
 import { protect, allow } from '../middleware/auth.js';
 const router=Router();
+router.get('/mine',protect,allow('admin','instructor'),async(req,res,next)=>{try{const filter=req.user.role==='admin'?{}:{instructor:req.user._id};const courses=await Course.find(filter).populate('instructor','name').sort({updatedAt:-1});res.json(courses)}catch(e){next(e)}});
 router.get('/',async(req,res,next)=>{try{
  const filter={published:true}; if(req.query.category)filter.category=req.query.category;
  if(req.query.search)filter.title={$regex:req.query.search,$options:'i'};
@@ -20,7 +21,7 @@ router.post('/',protect,allow('admin','instructor'),async(req,res,next)=>{try{
 router.patch('/:id',protect,allow('admin','instructor'),async(req,res,next)=>{try{
  const course=await Course.findById(req.params.id);if(!course)return res.status(404).json({message:'Course not found'});
  if(req.user.role!=='admin' && !course.instructor.equals(req.user._id))return res.status(403).json({message:'You can only edit your own courses'});
- Object.assign(course,req.body);await course.save();res.json(course);
+ const editable=['title','subtitle','description','category','level','price','thumbnailUrl','lessons','published']; for(const key of editable)if(req.body[key]!==undefined)course[key]=req.body[key]; await course.save();res.json(course);
 }catch(e){next(e)}});
 router.delete('/:id',protect,allow('admin','instructor'),async(req,res,next)=>{try{
  const course=await Course.findById(req.params.id);if(!course)return res.status(404).json({message:'Course not found'});
