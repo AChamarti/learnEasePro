@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { ArrowUpRight, Search } from 'lucide-react';
 import api from '../api/http';
 import { useAuth } from '../context/AuthContext';
+import CourseThumbnail from '../components/CourseThumbnail';
 
 export default function Courses() {
   const { user } = useAuth();
@@ -81,14 +82,8 @@ export default function Courses() {
 
           return (
             <article className="course-card" key={course._id}>
-              <Link
-                className="course-cover course-cover-link"
-                to={`/courses/${course._id}`}
-                aria-label={`View ${course.title}`}
-                style={course.thumbnailUrl
-                  ? { backgroundImage: `linear-gradient(0deg,#102b3c55,#102b3c22),url(${course.thumbnailUrl})` }
-                  : {}}
-              >
+              <Link className="course-cover course-cover-link" to={`/courses/${course._id}`} aria-label={`View ${course.title}`}>
+                <CourseThumbnail src={course.thumbnailUrl} alt={course.title} />
                 <span>{course.category}</span>
                 <span className="cover-symbol">✳</span>
               </Link>
@@ -187,15 +182,6 @@ export function CourseDetail() {
     }
   };
 
-  const pay = async () => {
-    try {
-      const response = await api.post(`/payments/checkout/${id}`);
-      window.location.assign(response.data.url);
-    } catch (error) {
-      setMessage(error.response?.data?.message || 'Unable to start checkout.');
-    }
-  };
-
   const review = async event => {
     event.preventDefault();
     try {
@@ -232,12 +218,8 @@ export function CourseDetail() {
         <div className="eyebrow">{course.category} · {course.level}</div>
         <h1>{course.title}</h1>
         <p className="detail-subtitle">{course.subtitle || course.description}</p>
-        <div
-          className="detail-cover"
-          style={course.thumbnailUrl
-            ? { backgroundImage: `linear-gradient(0deg,#102b3c55,#102b3c22),url(${course.thumbnailUrl})` }
-            : {}}
-        >
+        <div className="detail-cover">
+          <CourseThumbnail src={course.thumbnailUrl} alt={course.title} />
           <span>LEARN BY DOING</span>
         </div>
 
@@ -290,9 +272,7 @@ export function CourseDetail() {
       <aside className="enrol-card">
         <div className="eyebrow">START LEARNING</div>
         <div className="price">{course.price === 0 ? 'Free' : `£${Number(course.price || 0).toFixed(2)}`}</div>
-        <p>{course.price > 0
-          ? 'Secure checkout by card. Access is enabled automatically after confirmed payment.'
-          : 'Request access to this free course. An administrator will review your request.'}</p>
+        <p>Request access to this course. An administrator will review your enrolment request.</p>
 
         {user?.role === 'student' ? (
           isApproved ? (
@@ -306,10 +286,8 @@ export function CourseDetail() {
             <div className="notice">Your access request is pending administrator approval. You'll be able to watch lessons once it is approved.</div>
           ) : isRejected ? (
             <div className="notice">Your previous access request was declined. Please contact the course administrator for assistance.</div>
-          ) : course.price > 0 ? (
-            <button className="btn btn-primary btn-full" onClick={enrol}>Enrol</button>
           ) : (
-            <button className="btn btn-primary btn-full" onClick={enrol}>Request course access</button>
+            <button className="btn btn-primary btn-full" onClick={enrol}>Request to enrol</button>
           )
         ) : (
           <p className="muted">Log in as a student to enrol.</p>

@@ -7,11 +7,10 @@ A MERN-stack learning platform with role-based access for administrators, instru
 - JWT authentication, password hashing and password reset flow.
 - Course catalogue, categories, pricing, instructor course management and admin moderation.
 - Student course access requests and administrator approval.
-- Cloudinary uploads for course thumbnails and learning resources. Lesson videos are added by pasting a shareable YouTube, Vimeo or direct MP4/WebM/MOV URL; instructors do not need to download or upload video files.
+- Lesson videos are added by pasting a shareable YouTube, Vimeo or direct MP4/WebM/MOV URL; instructors do not need to download or upload video files.
 - Lesson playback, downloadable materials and completion tracking.
 - Multiple-choice quizzes, server-side grading, pass marks and attempt history.
 - Real-time course group chat with Socket.IO; chat access is checked on the server.
-- Stripe Checkout for paid courses. Enrolment is activated only after a verified Stripe webhook reports a paid checkout.
 - Course reviews and ratings for approved students.
 - Admin statistics, user/role management and enrolment reports.
 
@@ -95,11 +94,7 @@ Open `http://localhost:5173`.
 
 Never expose admin registration publicly.
 
-## 4. Cloudinary uploads
-
-Create a Cloudinary account at https://cloudinary.com/. Copy the cloud name, API key and API secret from the Cloudinary dashboard into `server/.env`. Uploads are sent through the authenticated API endpoint `/api/uploads`; instructor/admin access is required. Current file limit is 500 MB. Supported uploads include images, PDF, ZIP, common Office documents and text files. Video file upload remains available in the legacy API but is no longer used by the course editor. Adjust the allow-list and limits in `server/src/routes/uploads.js` if your deployment needs other types.
-
-## 4a. Adding lesson videos by URL (no video download required)
+## 4. Adding lesson videos by URL (no video download required)
 
 In Instructor Studio, paste a share link into the **Video URL** field when adding a lesson. Supported sources:
 
@@ -109,23 +104,8 @@ In Instructor Studio, paste a share link into the **Video URL** field when addin
 
 The video must allow embedding when using YouTube or Vimeo. Private videos, age/region-restricted videos, or videos whose owner disables embedding may not play. For direct video URLs, the host must permit browser playback (including CORS/range requests where required). Only paste links to videos you own or are authorised to use.
 
-## 5. Stripe test payments and webhook
 
-1. Create a Stripe account and use test mode.
-2. Put the test secret key (`sk_test_...`) in `STRIPE_SECRET_KEY`.
-3. Install the Stripe CLI: https://stripe.com/docs/stripe-cli
-4. Authenticate and forward webhooks to the local backend:
-
-```bash
-stripe login
-stripe listen --forward-to localhost:5000/api/payments/webhook
-```
-
-5. Copy the printed `whsec_...` signing secret into `STRIPE_WEBHOOK_SECRET`, restart the backend, and test with a Stripe test card such as `4242 4242 4242 4242` (any future expiry and any CVC).
-
-The payment webhook is deliberately required: do not manually mark a paid course as approved based only on the browser redirect. In production, configure a public HTTPS webhook endpoint in Stripe Dashboard and keep the signing secret private.
-
-## 6. Workflow
+## 5. Workflow
 
 - Instructor creates a course, uploads a thumbnail and optional learning resources, pastes a video URL for each lesson, adds lessons, and publishes it.
 - Instructor opens **Manage quizzes** to create assessments and correct answers.

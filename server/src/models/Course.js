@@ -1,7 +1,10 @@
 import mongoose from 'mongoose';
 const lessonSchema = new mongoose.Schema({
-  title: { type: String, required: true }, description: String,
-  videoUrl: String, resourceUrl: String, durationMinutes: { type: Number, default: 0 }, order: { type: Number, default: 0 }
+  title: { type: String, required: true, trim: true },
+  description: String,
+  videoUrl: String,
+  durationMinutes: { type: Number, default: 0 },
+  order: { type: Number, default: 0 }
 });
 const courseSchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true }, subtitle: String, description: { type: String, required: true },
