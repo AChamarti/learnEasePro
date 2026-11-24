@@ -7,10 +7,9 @@ A MERN-stack learning platform with role-based access for administrators, instru
 - JWT authentication, password hashing and password reset flow.
 - Course catalogue, categories, pricing, instructor course management and admin moderation.
 - Student course access requests and administrator approval.
-- Lesson videos are added by pasting a shareable YouTube, Vimeo or direct MP4/WebM/MOV URL; instructors do not need to download or upload video files.
-- Lesson playback, downloadable materials and completion tracking.
-- Multiple-choice quizzes, server-side grading, pass marks and attempt history.
-- Real-time course group chat with Socket.IO; chat access is checked on the server.
+- Lesson videos are added by pasting a shareable YouTube, Vimeo or direct MP4/WebM/MOV URL; 
+- Multiple-choice quizzes and pass marks.
+- Real-time course group chat.
 - Course reviews and ratings for approved students.
 - Admin statistics, user/role management and enrolment reports.
 
@@ -18,8 +17,6 @@ A MERN-stack learning platform with role-based access for administrators, instru
 
 - Node.js 18.18+ (Node 20 LTS recommended)
 - MongoDB Atlas or local MongoDB
-- Cloudinary account for uploads
-- Stripe account for paid-course checkout (test mode is sufficient for development)
 
 ## 1. Configure the backend
 
@@ -38,14 +35,6 @@ JWT_SECRET=replace_with_a_long_random_secret
 JWT_EXPIRES_IN=7d
 CLIENT_URL=http://localhost:5173
 
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-PAYMENT_CURRENCY=gbp
-```
 
 Generate a JWT secret with:
 
@@ -109,9 +98,8 @@ The video must allow embedding when using YouTube or Vimeo. Private videos, age/
 
 - Instructor creates a course, uploads a thumbnail and optional learning resources, pastes a video URL for each lesson, adds lessons, and publishes it.
 - Instructor opens **Manage quizzes** to create assessments and correct answers.
-- Student requests access to a free course; an admin approves or rejects the request.
-- For a paid course, the student completes Stripe Checkout; the verified webhook activates enrolment.
-- Approved students can watch videos, download resources, mark lessons complete, take quizzes, review the course and join its live group chat.
+- Student requests access to a course; an admin approves or rejects the request.
+- Approved students can watch videos, mark lessons complete, take quizzes and join its live group chat.
 - Admin manages users, enrolment requests and platform reports.
 
 ## API additions
@@ -122,14 +110,11 @@ The video must allow embedding when using YouTube or Vimeo. Private videos, age/
 - `POST /api/quizzes/:id/attempts` — submit and grade a student attempt.
 - `POST /api/payments/checkout/:courseId` — create Stripe Checkout session.
 - `POST /api/payments/webhook` — verify Stripe events and activate paid enrolments.
-- Socket.IO events: `course:join`, `course:message`; server validates course access and persists messages.
 
 ## Security notes
 
-- Never commit `.env` files or share database, JWT, Cloudinary or Stripe secrets.
+- Never commit `.env` files or share database, JWT.
 - Use HTTPS, a restrictive CORS origin, strong secrets, backups and a production file-size policy when deploying.
-- Configure Stripe webhook signing in production. Do not treat the success redirect as proof of payment.
-- Cloudinary URLs are delivered to enrolled learners via the course API; use private authenticated delivery if the course content requires DRM or strict access revocation.
 - For production, add virus scanning and stricter MIME/content validation for user uploads.
 
 ## Build and checks
@@ -139,7 +124,7 @@ cd client && npm run build
 cd ../server && npm start
 ```
 
-External services (MongoDB, Cloudinary and Stripe) require your own credentials and cannot be activated by the source archive itself.
+External services (MongoDB) require your own credentials and cannot be activated by the source archive itself.
 
 ## Session security update (automatic logout)
 
